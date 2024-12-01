@@ -8,13 +8,11 @@ const testFile = decoder.decode(
   await Deno.readFile(import.meta.dirname + "/test.txt"),
 );
 
-function part1(data: string) {
-  console.log("data", data);
+function part1(_data: string) {
   return "todo";
 }
 
-function part2(data: string) {
-  console.log("data", data);
+function part2(_data: string) {
   return "todo";
 }
 
