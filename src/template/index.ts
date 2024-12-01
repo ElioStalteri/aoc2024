@@ -30,5 +30,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part1(testFile), "todo");
+  assertEquals(part2(testFile), "todo");
 });

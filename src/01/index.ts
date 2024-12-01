@@ -9,13 +9,44 @@ const testFile = decoder.decode(
 );
 
 function part1(data: string) {
-  console.log("data", data);
-  return "todo";
+  const lines = data.split("\n");
+  const [list1, list2] = lines.filter(Boolean).reduce(
+    ([list1, list2], line) => {
+      const [n1, n2] = line.trim().split(/\s+/, 2);
+      return [
+        [...list1, parseInt(n1)],
+        [...list2, parseInt(n2)],
+      ];
+    },
+    [[], []] as [number[], number[]],
+  );
+
+  list1.sort();
+  list2.sort();
+
+  return list1.reduce((sum, _, i) => sum + Math.abs(list2[i] - list1[i]), 0);
 }
 
 function part2(data: string) {
-  console.log("data", data);
-  return "todo";
+  const lines = data.split("\n");
+  const [list1, list2] = lines.filter(Boolean).reduce(
+    ([list1, list2], line) => {
+      const [n1, n2] = line.trim().split(/\s+/, 2);
+      return [
+        [...list1, parseInt(n1)],
+        [...list2, parseInt(n2)],
+      ];
+    },
+    [[], []] as [number[], number[]],
+  );
+
+  const list1Set = new Set(list1);
+  const list1Map = new Map();
+  list1Set.forEach((key) =>
+    list1Map.set(key, list2.filter((v) => v === key).length)
+  );
+
+  return list1.reduce((acc, key) => acc + (key * list1Map.get(key)), 0);
 }
 
 export function solve() {
@@ -26,9 +57,9 @@ export function solve() {
 }
 
 Deno.test(function part1Test() {
-  assertEquals(part1(testFile), "todo");
+  assertEquals(part1(testFile), 11);
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part1(testFile), "todo");
+  assertEquals(part2(testFile), 31);
 });
