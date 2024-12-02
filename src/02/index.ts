@@ -40,8 +40,6 @@ function check_bad_level(is_increasing: boolean, a: number, b: number) {
   return is_change_incresing !== is_increasing || too_large || too_small;
 }
 
-//466 too high
-//404 too low
 function part2(data: string) {
   let lines = data.split("\n");
   lines = lines.filter(Boolean);
