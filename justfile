@@ -6,4 +6,4 @@ dev:
 run:
 	deno run --allow-read main.ts
 test:
-	deno test --allow-read --quiet src/**/*
+	deno test --allow-read  src/**/*
