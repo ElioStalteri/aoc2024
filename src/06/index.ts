@@ -184,11 +184,16 @@ function part1(data: string) {
   return layout.flat().filter((v) => v === TYPE.VISITED).length;
 }
 
+interface PATH {
+  start: POS;
+  end: POS;
+}
+
 interface PATHS {
-  UP: { start: POS; end: POS }[];
-  DOWN: { start: POS; end: POS }[];
-  LEFT: { start: POS; end: POS }[];
-  RIGHT: { start: POS; end: POS }[];
+  UP: PATH[];
+  DOWN: PATH[];
+  LEFT: PATH[];
+  RIGHT: PATH[];
 }
 
 function storePath(
@@ -217,6 +222,103 @@ function storePath(
   throw new Error("error storing paths");
 }
 
+function intersect(left: POS, top: POS, right: POS, down: POS) {
+  const point = {
+    x: top.x,
+    y: left.y,
+  };
+  return {
+    point,
+    intersect: left.x > top.x && right.x < top.x && left.y > top.y &&
+      left.y < down.y,
+  };
+}
+
+function doesPathsIntersect(origin: PATH, destination: PATH) {
+  const originYDelta = origin.start.y - origin.end.y;
+  const originXDelta = origin.start.x - origin.end.x;
+  const destinationYDelta = destination.start.y - destination.end.y;
+  const destinationXDelta = destination.start.x - destination.end.x;
+  if (
+    (originXDelta === 0 && destinationXDelta === 0) ||
+    (originYDelta === 0 && destinationYDelta === 0)
+  ) {
+    return {
+      intersect: false,
+    };
+  }
+  if (originXDelta > 0 && destinationYDelta > 0) { // RIGHT DOWN
+    return intersect(
+      origin.start,
+      destination.start,
+      origin.end,
+      destination.end,
+    );
+  }
+  if (originXDelta < 0 && destinationYDelta > 0) { // LEFT DOWN
+    return intersect(
+      origin.end,
+      destination.start,
+      origin.start,
+      destination.end,
+    );
+  }
+  if (originXDelta > 0 && destinationYDelta < 0) { // RIGHT UP
+    return intersect(
+      origin.start,
+      destination.end,
+      origin.end,
+      destination.start,
+    );
+  }
+  if (originXDelta < 0 && destinationYDelta < 0) { // LEFT UP
+    return intersect(
+      origin.end,
+      destination.end,
+      origin.start,
+      destination.start,
+    );
+  }
+
+  if (originYDelta > 0 && destinationXDelta > 0) { // DOWN RIGHT
+    return intersect(
+      destination.start,
+      origin.start,
+      destination.end,
+      origin.end,
+    );
+  }
+  if (originYDelta < 0 && destinationXDelta > 0) { // UP RIGHT
+    return intersect(
+      destination.start,
+      origin.end,
+      destination.end,
+      origin.start,
+    );
+  }
+  if (originYDelta > 0 && destinationXDelta < 0) { // DOWN LEFT
+    return intersect(
+      destination.end,
+      origin.start,
+      destination.start,
+      origin.end,
+    );
+  }
+  if (originYDelta < 0 && destinationXDelta < 0) { // UP LEFT
+    return intersect(
+      destination.end,
+      origin.end,
+      destination.start,
+      origin.start,
+    );
+  }
+}
+
+function comparePaths(paths: PATHS, curr: PATH) {
+  const allPaths: PATH[] = Object.values(paths).flat();
+  return allPaths.map((p) => doesPathsIntersect(p, curr));
+}
+
 function part2(data: string) {
   let layout = data.trim().split("\n")
     .map((r) => r.trim().split("")) as TYPE[][];
@@ -234,6 +336,7 @@ function part2(data: string) {
   while (newPos !== undefined) {
     newPos = walkGuard(guardPos, guardDirection, obstacles);
     if (newPos) {
+      console.log(comparePaths(paths, { start: guardPos, end: newPos }));
       paths = storePath(layout, paths, guardDirection, guardPos, newPos);
       const newDir = rotateGuardDirection(guardDirection);
       layout = updateLayout(layout, guardPos, newPos);
