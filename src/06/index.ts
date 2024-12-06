@@ -157,10 +157,10 @@ function updateLayoutFinal(
   throw new Error(`failed to update layout wrong direction x:${x} y:${y}`);
 }
 
-async function printLayout(layout: TYPE[][]) {
+function printLayout(layout: TYPE[][]) {
   //await delay(500);
   //console.clear();
-  //console.log(layout.map((r) => r.join("")).join("\n"));
+  console.log(layout.map((r) => r.join("")).join("\n"));
 }
 
 function part1(data: string) {
@@ -169,10 +169,6 @@ function part1(data: string) {
   let [guardPos] = findTypePos(TYPE.GUARD, layout);
   const obstacles = findTypePos(TYPE.OBSTACLE, layout);
   let guardDirection: DIRECTION = { x: 0, y: -1 };
-  //console.log(obstacles.find(({ x, y }) => x === 40 && y === 16)); //y:16,x:40
-  //console.log(obstacles.find(({ x, y }) => x === 39 && y === 15)); //y:16,x:40
-  //console.log(obstacles.find(({ x, y }) => x === 39 && y === 16)); //y:16,x:40
-  //return 0;
   let newPos: POS | undefined = guardPos;
   while (newPos !== undefined) {
     newPos = walkGuard(guardPos, guardDirection, obstacles);
@@ -184,14 +180,74 @@ function part1(data: string) {
     } else {
       layout = updateLayoutFinal(layout, guardPos, guardDirection);
     }
-    //await printLayout(layout);
   }
-  // 268 too low
   return layout.flat().filter((v) => v === TYPE.VISITED).length;
 }
 
-function part2(_data: string) {
-  return "todo";
+interface PATHS {
+  UP: { start: POS; end: POS }[];
+  DOWN: { start: POS; end: POS }[];
+  LEFT: { start: POS; end: POS }[];
+  RIGHT: { start: POS; end: POS }[];
+}
+
+function storePath(
+  layout: TYPE[][],
+  paths: PATHS,
+  { x, y }: DIRECTION,
+  start: POS,
+  _end?: POS,
+): PATHS {
+  if (y < 0) {
+    const end = _end ? _end : { ...start, y: 0 };
+    return { ...paths, UP: [...paths.UP, { start, end }] };
+  }
+  if (x > 0) {
+    const end = _end ? _end : { ...start, x: layout[0].length - 1 };
+    return { ...paths, RIGHT: [...paths.RIGHT, { start, end }] };
+  }
+  if (y > 0) {
+    const end = _end ? _end : { ...start, y: layout.length - 1 };
+    return { ...paths, DOWN: [...paths.DOWN, { start, end }] };
+  }
+  if (x < 0) {
+    const end = _end ? _end : { ...start, x: 0 };
+    return { ...paths, LEFT: [...paths.LEFT, { start, end }] };
+  }
+  throw new Error("error storing paths");
+}
+
+function part2(data: string) {
+  let layout = data.trim().split("\n")
+    .map((r) => r.trim().split("")) as TYPE[][];
+  let [guardPos] = findTypePos(TYPE.GUARD, layout);
+  const initialPos = { ...guardPos };
+  const obstacles = findTypePos(TYPE.OBSTACLE, layout);
+  let guardDirection: DIRECTION = { x: 0, y: -1 };
+  let paths: PATHS = {
+    UP: [],
+    DOWN: [],
+    LEFT: [],
+    RIGHT: [],
+  };
+  let newPos: POS | undefined = guardPos;
+  while (newPos !== undefined) {
+    newPos = walkGuard(guardPos, guardDirection, obstacles);
+    if (newPos) {
+      paths = storePath(layout, paths, guardDirection, guardPos, newPos);
+      const newDir = rotateGuardDirection(guardDirection);
+      layout = updateLayout(layout, guardPos, newPos);
+      guardPos = newPos;
+      guardDirection = newDir;
+    } else {
+      paths = storePath(layout, paths, guardDirection, guardPos);
+      layout = updateLayoutFinal(layout, guardPos, guardDirection);
+    }
+  }
+
+  console.log(paths);
+  printLayout(layout);
+  return 0;
 }
 
 export function solve() {
@@ -206,5 +262,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "todo");
+  assertEquals(part2(testFile), 6);
 });
