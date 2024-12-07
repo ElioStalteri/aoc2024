@@ -43,8 +43,27 @@ function part1(data: string) {
       };
     });
 
-  console.log(permStep(8).length);
-  return 0;
+  const res = equations.map(({ res, eq: [first, ...rest] }) => {
+    const permCount = [first, ...rest].length - 1;
+    const permutations = permStep(permCount);
+
+    for (const perm of permutations) {
+      const correct = res === rest.reduce((acc, v, i) => {
+        switch (perm[i]) {
+          case OP.PLUS:
+            return acc + v;
+          case OP.MUL:
+            return acc * v;
+          default:
+            throw new Error("OP not found");
+        }
+      }, first);
+
+      if (correct) return { correct, res };
+    }
+    return { correct: false, res };
+  }).filter(({ correct }) => correct).reduce((acc, { res }) => acc + res, 0);
+  return res;
 }
 
 function part2(_data: string) {
