@@ -8,29 +8,32 @@ const testFile = decoder.decode(
   await Deno.readFile(import.meta.dirname + "/test.txt"),
 );
 
-enum OP {
-  PLUS = "+",
-  MUL = "*",
-}
-
 const permTable: {
-  [key: number]: OP[][];
+  [ops: string]: {
+    // deno-lint-ignore no-explicit-any
+    [key: number]: any[][];
+  };
 } = {};
 
-function permStep(times: number): OP[][] {
-  if (times in permTable) return permTable[times];
-  const ops = Object.values(OP);
+function permStep<T>(ops: T[], times: number): T[][] {
+  const opsStr = ops.join("");
+  if (!(opsStr in permTable)) permTable[opsStr] = {};
+  if (times in permTable[opsStr]) return permTable[opsStr][times];
   if (times === 1) return ops.map((v) => [v]);
-  const nextPerm = permStep(times - 1);
-  let res: OP[][] = [];
+  const nextPerm = permStep<T>(ops, times - 1);
+  let res: T[][] = [];
   for (const op of ops) {
     res = res.concat(nextPerm.map((v) => [op, ...v]));
   }
-  permTable[times] = res;
+  permTable[opsStr][times] = res;
   return res;
 }
 
 function part1(data: string) {
+  enum OP {
+    PLUS = "+",
+    MUL = "*",
+  }
   const equations = data
     .trim()
     .split("\n")
@@ -45,7 +48,7 @@ function part1(data: string) {
 
   const res = equations.map(({ res, eq: [first, ...rest] }) => {
     const permCount = [first, ...rest].length - 1;
-    const permutations = permStep(permCount);
+    const permutations = permStep<OP>(Object.values(OP), permCount);
 
     for (const perm of permutations) {
       const correct = res === rest.reduce((acc, v, i) => {
@@ -66,8 +69,47 @@ function part1(data: string) {
   return res;
 }
 
-function part2(_data: string) {
-  return "todo";
+function part2(data: string) {
+  enum OP {
+    PLUS = "+",
+    MUL = "*",
+    CONCAT = "||",
+  }
+  const equations = data
+    .trim()
+    .split("\n")
+    .filter(Boolean)
+    .map((l) => {
+      const [res, eq] = l.split(":", 2);
+      return {
+        res: parseInt(res),
+        eq: eq.trim().split(" ").map((n) => parseInt(n)),
+      };
+    });
+
+  const res = equations.map(({ res, eq: [first, ...rest] }) => {
+    const permCount = [first, ...rest].length - 1;
+    const permutations = permStep<OP>(Object.values(OP), permCount);
+
+    for (const perm of permutations) {
+      const correct = res === rest.reduce((acc, v, i) => {
+        switch (perm[i]) {
+          case OP.PLUS:
+            return acc + v;
+          case OP.MUL:
+            return acc * v;
+          case OP.CONCAT:
+            return parseInt(acc + "" + v);
+          default:
+            throw new Error("OP not found");
+        }
+      }, first);
+
+      if (correct) return { correct, res };
+    }
+    return { correct: false, res };
+  }).filter(({ correct }) => correct).reduce((acc, { res }) => acc + res, 0);
+  return res;
 }
 
 export function solve() {
@@ -82,5 +124,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "todo");
+  assertEquals(part2(testFile), 11387);
 });
