@@ -222,16 +222,23 @@ function storePath(
   throw new Error("error storing paths");
 }
 
-function intersect(left: POS, top: POS, right: POS, down: POS) {
+function intersect(left: POS, top: POS, right: POS, down: POS, dir: DIRECTION) {
   const point = {
-    x: top.x,
-    y: left.y,
+    x: top.x + dir.x,
+    y: left.y + dir.y,
   };
-  return {
+  const res = {
     point,
     intersect: left.x > top.x && right.x < top.x && left.y > top.y &&
       left.y < down.y,
+    dir,
+    left,
+    right,
+    down,
+    top,
   };
+  if (res.intersect) console.log(res, left, top, right, down, dir);
+  return res;
 }
 
 function doesPathsIntersect(origin: PATH, destination: PATH) {
@@ -253,23 +260,14 @@ function doesPathsIntersect(origin: PATH, destination: PATH) {
       destination.start,
       origin.end,
       destination.end,
+      { x: 1, y: 0 },
     );
   }
   if (originXDelta < 0 && destinationYDelta > 0) { // LEFT DOWN
-    return intersect(
-      origin.end,
-      destination.start,
-      origin.start,
-      destination.end,
-    );
+    return { intersect: false };
   }
   if (originXDelta > 0 && destinationYDelta < 0) { // RIGHT UP
-    return intersect(
-      origin.start,
-      destination.end,
-      origin.end,
-      destination.start,
-    );
+    return { intersect: false };
   }
   if (originXDelta < 0 && destinationYDelta < 0) { // LEFT UP
     return intersect(
@@ -277,16 +275,12 @@ function doesPathsIntersect(origin: PATH, destination: PATH) {
       destination.end,
       origin.start,
       destination.start,
+      { x: -1, y: 0 },
     );
   }
 
   if (originYDelta > 0 && destinationXDelta > 0) { // DOWN RIGHT
-    return intersect(
-      destination.start,
-      origin.start,
-      destination.end,
-      origin.end,
-    );
+    return { intersect: false };
   }
   if (originYDelta < 0 && destinationXDelta > 0) { // UP RIGHT
     return intersect(
@@ -294,6 +288,7 @@ function doesPathsIntersect(origin: PATH, destination: PATH) {
       origin.end,
       destination.end,
       origin.start,
+      { x: 0, y: -1 },
     );
   }
   if (originYDelta > 0 && destinationXDelta < 0) { // DOWN LEFT
@@ -302,15 +297,11 @@ function doesPathsIntersect(origin: PATH, destination: PATH) {
       origin.start,
       destination.start,
       origin.end,
+      { x: 0, y: 1 },
     );
   }
   if (originYDelta < 0 && destinationXDelta < 0) { // UP LEFT
-    return intersect(
-      destination.end,
-      origin.end,
-      destination.start,
-      origin.start,
-    );
+    return { intersect: false };
   }
 }
 
