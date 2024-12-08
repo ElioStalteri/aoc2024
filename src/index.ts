@@ -7,3 +7,4 @@ export { solve as day5 } from "./05/index.ts";
 export { solve as day6 } from "./06/index.ts";
 export { solve as day7 } from "./07/index.ts";
 export { solve as day8 } from "./08/index.ts";
+export { solve as day9 } from "./09/index.ts";
