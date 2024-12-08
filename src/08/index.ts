@@ -49,10 +49,38 @@ const getAntinodes = (p1: P, p2: P): P[] => {
   return [aP1P2, aP2P1];
 };
 
+const getAntinodesFullField = (fieldD: DIST, p1: P, p2: P): P[] => {
+  const d = distance(p1, p2);
+  const dP1P2 = direction(p1, p2);
+  const dP2P1 = direction(p2, p1);
+  const amount = Math.ceil(
+    Math.sqrt(Math.pow(fieldD.x, 2) + Math.pow(fieldD.y, 2)) /
+      Math.sqrt(Math.pow(d.x, 2) + Math.pow(d.y, 2)),
+  );
+  const res: P[] = [];
+  for (let i = 1; i <= amount; i++) {
+    res.push(antinode(dP1P2, { x: d.x * i, y: d.y * i }, p1));
+  }
+  for (let i = 1; i <= amount; i++) {
+    res.push(antinode(dP2P1, { x: d.x * i, y: d.y * i }, p2));
+  }
+  return res;
+};
+
 const updateField = (_field: string[][], antinodes: P[]) => {
-  const field = [..._field];
+  const field: string[][] = JSON.parse(JSON.stringify(_field));
   antinodes.forEach((an) => {
-    if (field?.[an.y]?.[an.x]) {
+    if (field?.[an.y]?.[an.x] !== undefined) {
+      field[an.y][an.x] = an.c;
+    }
+  });
+  return field;
+};
+
+const updateFieldKeepNodes = (_field: string[][], antinodes: P[]) => {
+  const field: string[][] = JSON.parse(JSON.stringify(_field));
+  antinodes.forEach((an) => {
+    if (field?.[an.y]?.[an.x] === ".") {
       field[an.y][an.x] = an.c;
     }
   });
@@ -87,8 +115,37 @@ function part1(data: string) {
   return fieldWithAntinodes.flat().filter((v) => v === "#").length;
 }
 
-function part2(_data: string) {
-  return "todo";
+function part2(data: string) {
+  const field = data.trim().split("\n").filter(Boolean).map((v) =>
+    v.trim().split("").filter(Boolean)
+  );
+  const nodes = field
+    .flatMap((v, y) => v.map((c, x) => ({ c, x, y }) as P))
+    .reduce((acc, p) => ({
+      ...acc,
+      ...(p.c !== "." ? { [p.c]: [...(acc[p.c] || []), p] } : {}),
+    }), {} as { [key: string]: P[] });
+
+  const antinodes = Object.values(nodes).flatMap((ns) => {
+    let res: P[] = [];
+    for (let i = 0; i < ns.length - 1; i++) {
+      for (let j = i + 1; j < ns.length; j++) {
+        res = res.concat(
+          getAntinodesFullField(
+            { x: field[0].length, y: field.length },
+            ns[i],
+            ns[j],
+          ),
+        );
+      }
+    }
+    return res;
+  })
+    .filter((n) => field?.[n.y]?.[n.x] !== undefined);
+
+  const fieldWithAntinodes = updateField(field, antinodes);
+
+  return fieldWithAntinodes.flat().filter((v) => v !== ".").length;
 }
 
 export function solve() {
@@ -103,5 +160,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "todo");
+  assertEquals(part2(testFile), 34);
 });
