@@ -8,24 +8,6 @@ const testFile = decoder.decode(
   await Deno.readFile(import.meta.dirname + "/test.txt"),
 );
 
-const compute = (n: number) => {
-  //If the stone is engraved with the number 0, it is replaced by a stone engraved with the number 1.
-  if (n === 0) return [1];
-  //If the stone is engraved with a number that has an even number of digits, it is replaced by two stones. The left half of the digits are engraved on the new left stone, and the right half of the digits are engraved on the new right stone. (The new numbers don't keep extra leading zeroes: 1000 would become stones 10 and 0.)
-  const digits = `${n}`.split("");
-  if (digits.length % 2 === 0) {
-    const n1 = digits.slice(0, digits.length / 2).join("");
-    const n2 = digits.slice(digits.length / 2).join("");
-    if (Number.isNaN(parseInt(n1)) || Number.isNaN(parseInt(n2))) {
-      console.log(n1, n2, digits.length / 2);
-      throw new Error("NANANANANNAN");
-    }
-    return [parseInt(n1), parseInt(n2)];
-  }
-  //If none of the other rules apply, the stone is replaced by a new stone; the old stone's number multiplied by 2024 is engraved on the new stone.
-  return [n * 2024];
-};
-
 const memory: { [key: string]: number } = {};
 
 const computeRec = (n: number, max = 75): number => {
@@ -61,13 +43,11 @@ const computeRec = (n: number, max = 75): number => {
 };
 
 function part1(data: string) {
-  let numbers = data.trim().split(/\s+/i).map((v) => parseInt(v));
+  const numbers = data.trim().split(/\s+/i).map((v) => parseInt(v));
 
-  for (let i = 0; i < 25; i++) {
-    numbers = numbers.flatMap(compute);
-  }
+  const res = numbers.map((v) => computeRec(v, 25));
 
-  return numbers.length;
+  return res.reduce((acc, v) => acc + v, 0);
 }
 
 function part2(data: string) {
@@ -75,7 +55,7 @@ function part2(data: string) {
 
   const res = numbers.map((v) => computeRec(v));
 
-  return res.reduce((acc, v) => acc + v, 0).toString();
+  return res.reduce((acc, v) => acc + v, 0);
 }
 
 export function solve() {
@@ -90,5 +70,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "65601038650482");
+  assertEquals(part2(testFile), 65601038650482);
 });
