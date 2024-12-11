@@ -18,7 +18,7 @@ const compute = (n: number) => {
     const n2 = digits.slice(digits.length / 2).join("");
     if (Number.isNaN(parseInt(n1)) || Number.isNaN(parseInt(n2))) {
       console.log(n1, n2, digits.length / 2);
-      throw new Error("NANANANANNA");
+      throw new Error("NANANANANNAN");
     }
     return [parseInt(n1), parseInt(n2)];
   }
@@ -46,7 +46,7 @@ const computeRec = (n: number, max = 75): number => {
     const n2 = parseInt(n2s);
     if (Number.isNaN(n1) || Number.isNaN(n2)) {
       console.log(n1s, n2s, digits.length / 2);
-      throw new Error("NANANANANNA");
+      throw new Error("NANANANANNAN");
     }
     const res = max === 1
       ? 2
