@@ -6,6 +6,9 @@ if (import.meta.main) {
   );
   for (const [name, func] of files) {
     if (name === "template") continue;
-    console.log(name, func());
+    const start = performance.now();
+    const res = { ...func(), time: "" };
+    res.time = `${Math.ceil(performance.now() - start)}ms`;
+    console.log(name, res);
   }
 }
