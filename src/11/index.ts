@@ -1,13 +1,4 @@
 import { assertEquals } from "@std/assert";
-import { bignumber } from "mathjs";
-import { BigNumber } from "mathjs";
-import { number } from "mathjs";
-import { all, create } from "mathjs";
-
-const math = create(all, {
-  number: "BigNumber",
-  precision: 200000000,
-});
 
 const decoder = new TextDecoder("utf-8");
 const dataFile = decoder.decode(
@@ -35,14 +26,14 @@ const compute = (n: number) => {
   return [n * 2024];
 };
 
-const memory: { [key: string]: BigNumber } = {};
+const memory: { [key: string]: number } = {};
 
-const computeRec = (n: number, max = 75): BigNumber => {
+const computeRec = (n: number, max = 75): number => {
   const key = `${n}|${max}`;
   if (key in memory) return memory[key];
   //If the stone is engraved with the number 0, it is replaced by a stone engraved with the number 1.
   if (n === 0) {
-    const res = max === 1 ? math.bignumber(1) : computeRec(1, max - 1);
+    const res = max === 1 ? 1 : computeRec(1, max - 1);
     memory[key] = res;
     return res;
   }
@@ -57,15 +48,14 @@ const computeRec = (n: number, max = 75): BigNumber => {
       console.log(n1s, n2s, digits.length / 2);
       throw new Error("NANANANANNA");
     }
-    const res = max === 1 ? math.bignumber(2) : math.bignumber(
-      math.add(computeRec(n1, max - 1), computeRec(n2, max - 1))
-        .toString(),
-    );
+    const res = max === 1
+      ? 2
+      : computeRec(n1, max - 1) + computeRec(n2, max - 1);
     memory[key] = res;
     return res;
   }
   //If none of the other rules apply, the stone is replaced by a new stone; the old stone's number multiplied by 2024 is engraved on the new stone.
-  const res = max === 1 ? math.bignumber(1) : computeRec(n * 2024, max - 1);
+  const res = max === 1 ? 1 : computeRec(n * 2024, max - 1);
   memory[key] = res;
   return res;
 };
@@ -85,7 +75,7 @@ function part2(data: string) {
 
   const res = numbers.map((v) => computeRec(v));
 
-  return res.reduce((acc, v) => math.add(acc, v), math.bignumber(0)).toString();
+  return res.reduce((acc, v) => acc + v, 0).toString();
 }
 
 export function solve() {
