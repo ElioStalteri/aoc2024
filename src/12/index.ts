@@ -18,7 +18,23 @@ function findPos(pos: POS[], p: POS) {
   return { exists: idx !== -1, idx };
 }
 
-function checkAdiacent(pos: POS[], p: POS) {
+interface ADIACENT {
+  adiacent: boolean;
+  edge: boolean;
+  alone: boolean;
+  edges: number;
+  curr: number;
+  currPos: POS;
+  adiacents: number[];
+  edgeDetail: {
+    top: boolean;
+    bottom: boolean;
+    left: boolean;
+    right: boolean;
+  };
+}
+
+function checkAdiacent(pos: POS[], p: POS): ADIACENT {
   const curr = findPos(pos, p);
   const top = findPos(pos, { ...p, y: p.y - 1 });
   const bottom = findPos(pos, { ...p, y: p.y + 1 });
@@ -33,6 +49,12 @@ function checkAdiacent(pos: POS[], p: POS) {
     adiacent: !!top || !!bottom || !!left || !!right,
     edge: edges > 0,
     alone: edges === 4,
+    edgeDetail: {
+      top: !top.exists,
+      bottom: !bottom.exists,
+      left: !left.exists,
+      right: !right.exists,
+    },
     edges,
     curr: curr.idx,
     currPos: p,
@@ -42,17 +64,9 @@ function checkAdiacent(pos: POS[], p: POS) {
   };
 }
 
-type REAGION = {
-  adiacent: boolean;
-  edge: boolean;
-  alone: boolean;
-  edges: number;
-  curr: number;
-  currPos: POS;
-  adiacents: number[];
-}[];
+type REGION = ADIACENT[];
 
-function getRegions(pos: POS[]): REAGION[] {
+function getRegions(pos: POS[]): REGION[] {
   const adiacents = pos.map((p) => checkAdiacent(pos, p));
 
   const regionPositionsIdx = adiacents.reduce((acc, v) => {
@@ -60,10 +74,10 @@ function getRegions(pos: POS[]): REAGION[] {
     const found = acc.filter((adjs) =>
       v.adiacents.some((idx) => adjs.includes(idx))
     );
+    if (found.length === 0) return [...acc, v.adiacents];
     const rest = acc.filter((adjs) =>
       !v.adiacents.some((idx) => adjs.includes(idx))
     );
-    if (found.length === 0) return [...acc, v.adiacents];
     const merged = found.reduce((m, a) => m.concat(a), [] as number[]);
     const res = Array.from(new Set([...merged, ...v.adiacents]));
     return [...rest, res];
@@ -72,7 +86,7 @@ function getRegions(pos: POS[]): REAGION[] {
   return regionPositionsIdx.map((idxs) => idxs.map((idx) => adiacents[idx]));
 }
 
-function getFencePrice(reagion: REAGION) {
+function getFencePrice(reagion: REGION) {
   const area = reagion.length;
   const perimeter = reagion.reduce((acc, p) => acc + p.edges, 0);
   return area * perimeter;
@@ -119,8 +133,120 @@ function part1(data: string) {
   );
 }
 
-function part2(_data: string) {
-  return "todo";
+function countContigous(
+  _pos: POS[],
+  key: keyof POS,
+  level: keyof POS,
+  plant?: string,
+) {
+  const pos = _pos.toSorted((a, b) => a[key] - b[key]);
+  const levels = Array.from(new Set(pos.map((p) => p[level])));
+  //if (plant === "F") console.log(pos);
+  let count = 0;
+  for (const l of levels) {
+    count++;
+    const toCheck = pos.filter((p) => p[level] === l);
+    for (let i = 0; i < toCheck.length - 1; i++) {
+      //if (plant === "F") {
+      //  console.log(
+      //    key,
+      //    toCheck[i],
+      //    toCheck[i + 1],
+      //    level,
+      //    l,
+      //  );
+      //}
+      if (
+        toCheck[i][key] + 1 !== toCheck[i + 1][key]
+      ) count++;
+    }
+  }
+  //if (plant === "F") console.log(count);
+  return count;
+}
+
+function getEdgesWithDiscount(r: REGION, plant?: string) {
+  const edges = r.filter((ad) => ad.edge);
+  const tops = countContigous(
+    edges.filter((ed) => ed.edgeDetail.top).map((ed) => ed.currPos),
+    "x",
+    "y",
+    plant,
+  );
+  const botts = countContigous(
+    edges.filter((ed) => ed.edgeDetail.bottom).map((ed) => ed.currPos),
+    "x",
+    "y",
+    plant,
+  );
+  const rights = countContigous(
+    edges.filter((ed) => ed.edgeDetail.right).map((ed) => ed.currPos),
+    "y",
+    "x",
+    plant,
+  );
+  const lefts = countContigous(
+    edges.filter((ed) => ed.edgeDetail.left).map((ed) => ed.currPos),
+    "y",
+    "x",
+    plant,
+  );
+  //if (plant === "F") console.log(tops, botts, lefts, rights);
+  return tops + botts + lefts + rights;
+}
+
+function getFencePriceDisc(reagion: REGION, plant?: string) {
+  const area = reagion.length;
+  const perimeter = getEdgesWithDiscount(reagion, plant);
+  //if (plant === "F") console.log(area, perimeter);
+  return area * perimeter;
+}
+
+function part2(data: string) {
+  const garden = data.trim().split("\n")
+    .map((r) => r.trim().split(""));
+  const positionsByPlant = garden.reduce((acc, line, y) => {
+    const newAcc = { ...acc };
+    for (let x = 0; x < line.length; x++) {
+      const plant = line[x];
+      newAcc[plant] = [...(newAcc[plant] || []), { x, y }];
+    }
+    return newAcc;
+  }, {} as { [key: string]: POS[] });
+
+  //console.log(positionsByPlant["C"]);
+
+  const regionsByPlant = Object.entries(positionsByPlant).reduce(
+    (acc, [plant, positions]) => {
+      const regions = getRegions(positions);
+
+      const fencePrice = regions.map((r) => getFencePriceDisc(r, plant));
+      //if (plant === "F") {
+      //  console.log(fencePrice);
+      //}
+
+      return ({
+        ...acc,
+        [plant]: {
+          fencePrice: fencePrice.reduce(
+            (acc, v) => acc + v,
+            0,
+          ),
+        },
+      });
+    },
+    {} as {
+      [plant: string]: {
+        fencePrice: number;
+        regions?: ReturnType<typeof getRegions>;
+      };
+    },
+  );
+  //console.log(regionsByPlant);
+  return Object.values(regionsByPlant).reduce(
+    (acc, r) => acc + r.fencePrice,
+    0,
+  );
 }
 
 export function solve() {
@@ -135,5 +261,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "todo");
+  assertEquals(part2(testFile), 1206);
 });
