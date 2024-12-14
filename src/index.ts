@@ -12,3 +12,4 @@ export { solve as day10 } from "./10/index.ts";
 export { solve as day11 } from "./11/index.ts";
 export { solve as day12 } from "./12/index.ts";
 export { solve as day13 } from "./13/index.ts";
+export { solve as day14 } from "./14/index.ts";
