@@ -84,8 +84,8 @@ function getDirection(d: Mov): Pos {
   }
 }
 
-function printMap(map: Map | LargeMap) {
-  console.clear();
+function printMap(map: Map | LargeMap, clear = true) {
+  if (clear) console.clear();
   console.log("\n");
   console.log(map.map((r) => r.join("")).join("\n"));
   console.log("\n");
@@ -259,6 +259,16 @@ function applyNewPositionsLargeMap(
   const newMap: LargeMap = JSON.parse(JSON.stringify(map));
   const copied: string[] = [];
   for (const p of pos) {
+    //const toSkip = !p.old &&
+    //  pos.find((ps) => ps?.old?.y === p.new.y && ps.old.x === p.new.x);
+    //if (p.new.x === 12) {
+    //  console.log(
+    //    toSkip,
+    //    p,
+    //    pos.find((ps) => ps?.old?.y === p.new.y && ps.old.x === p.new.x),
+    //  );
+    //}
+    //if (toSkip) continue;
     const old = p.old ? map[p.old.y][p.old.x] : LargeType.empty;
     if (
       old === LargeType.robot && p.old
@@ -272,6 +282,20 @@ function applyNewPositionsLargeMap(
     }
   }
   return newMap;
+}
+
+function checkMap(map: LargeMap) {
+  for (let y = 0; y < map.length; y++) {
+    for (let x = 0; x < map[0].length; x++) {
+      if (map[y][x] === LargeType.boxL && map[y][x + 1] !== LargeType.boxR) {
+        return false;
+      }
+      if (map[y][x - 1] !== LargeType.boxL && map[y][x] === LargeType.boxR) {
+        return false;
+      }
+    }
+  }
+  return true;
 }
 
 async function part2(data: string) {
@@ -310,9 +334,14 @@ async function part2(data: string) {
     const newPos = getNewPositionsLargeMap(map, robotPos, m);
     if (newPos !== false) {
       map = applyNewPositionsLargeMap(map, newPos);
+      console.log(newPos);
       robotPos = findRobotPos(map);
+      if (!checkMap(map)) {
+        printMap(map, false);
+        throw new Error("map broken");
+      }
     }
-    await delay(200);
+    await delay(1);
   }
 
   //const boxesScore = getBoxsesPosition(map).map(calculateBoxScore);
