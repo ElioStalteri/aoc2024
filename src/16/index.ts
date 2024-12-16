@@ -33,9 +33,10 @@ function key({ x, y }: { x: number; y: number }) {
 
 function computePathScore(path: string[]) {
   let score = 0;
-  let prev = path[0].split(",");
+  const [prevs, ...rest] = path;
+  let prev = prevs.split(",");
   const dir = { x: 1, y: 0 };
-  for (const p of path.slice(1)) {
+  for (const p of rest) {
     const curr = p.split(",");
     const [px, py] = [parseInt(prev[0]), parseInt(prev[1])];
     const [cx, cy] = [parseInt(curr[0]), parseInt(curr[1])];
