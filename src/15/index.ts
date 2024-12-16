@@ -97,6 +97,12 @@ function getBoxsesPosition(map: Map) {
   ).filter(Boolean) as Pos[];
 }
 
+function getBoxsesPositionLarge(map: LargeMap) {
+  return map.flatMap((r, y) =>
+    r.map((v, x) => v === LargeType.boxL ? { x, y } : undefined)
+  ).filter(Boolean) as Pos[];
+}
+
 function calculateBoxScore(p: Pos) {
   return p.y * 100 + p.x;
 }
@@ -187,7 +193,7 @@ function getNewPositionsLargeMap(
   map: LargeMap,
   p: Pos,
   d: Pos,
-): { old: undefined | Pos; new: Pos }[] | false {
+): { old: undefined | Pos; new: Pos; mandatory?: boolean }[] | false {
   const newP = { x: p.x + d.x, y: p.y + d.y };
   const obj = map?.[newP.y]?.[newP.x];
   if (obj === undefined) {
@@ -206,8 +212,8 @@ function getNewPositionsLargeMap(
       if (newL === false || newR === false) return false;
       return [
         ...replaceBoxVerticalMove(map, boxPos, p),
-        { old: boxPos[0], new: newBoxPos[0] },
-        { old: boxPos[1], new: newBoxPos[1] },
+        { old: boxPos[0], new: newBoxPos[0], mandatory: true },
+        { old: boxPos[1], new: newBoxPos[1], mandatory: true },
         ...newL,
         ...newR,
       ];
@@ -216,8 +222,8 @@ function getNewPositionsLargeMap(
       if (newL === false) return false;
       return [
         { old: p, new: boxPos[1] },
-        { old: boxPos[0], new: newBoxPos[0] },
-        { old: boxPos[1], new: newBoxPos[1] },
+        { old: boxPos[0], new: newBoxPos[0], mandatory: true },
+        { old: boxPos[1], new: newBoxPos[1], mandatory: true },
         ...newL,
       ];
     }
@@ -233,8 +239,8 @@ function getNewPositionsLargeMap(
       if (newL === false || newR === false) return false;
       return [
         ...replaceBoxVerticalMove(map, boxPos, p),
-        { old: boxPos[0], new: newBoxPos[0] },
-        { old: boxPos[1], new: newBoxPos[1] },
+        { old: boxPos[0], new: newBoxPos[0], mandatory: true },
+        { old: boxPos[1], new: newBoxPos[1], mandatory: true },
         ...newL,
         ...newR,
       ];
@@ -243,8 +249,8 @@ function getNewPositionsLargeMap(
       if (newR === false) return false;
       return [
         { old: p, new: boxPos[0] },
-        { old: boxPos[0], new: newBoxPos[0] },
-        { old: boxPos[1], new: newBoxPos[1] },
+        { old: boxPos[0], new: newBoxPos[0], mandatory: true },
+        { old: boxPos[1], new: newBoxPos[1], mandatory: true },
         ...newR,
       ];
     }
@@ -254,21 +260,14 @@ function getNewPositionsLargeMap(
 
 function applyNewPositionsLargeMap(
   map: LargeMap,
-  pos: { old: undefined | Pos; new: Pos }[],
+  _pos: { old: undefined | Pos; new: Pos; mandatory?: boolean }[],
 ) {
+  const pos = _pos.toSorted((a, b) =>
+    a.mandatory && !b.mandatory ? -1 : a.old && !b.old ? -1 : 0
+  );
   const newMap: LargeMap = JSON.parse(JSON.stringify(map));
   const copied: string[] = [];
   for (const p of pos) {
-    //const toSkip = !p.old &&
-    //  pos.find((ps) => ps?.old?.y === p.new.y && ps.old.x === p.new.x);
-    //if (p.new.x === 12) {
-    //  console.log(
-    //    toSkip,
-    //    p,
-    //    pos.find((ps) => ps?.old?.y === p.new.y && ps.old.x === p.new.x),
-    //  );
-    //}
-    //if (toSkip) continue;
     const old = p.old ? map[p.old.y][p.old.x] : LargeType.empty;
     if (
       old === LargeType.robot && p.old
@@ -298,7 +297,7 @@ function checkMap(map: LargeMap) {
   return true;
 }
 
-async function part2(data: string) {
+function part2(data: string) {
   const [mapStr, movementsStr] = data.trim().split("\n\n");
 
   let map = mapStr.trim().split("\n").filter(Boolean)
@@ -327,27 +326,26 @@ async function part2(data: string) {
 
   let robotPos = findRobotPos(map);
 
-  printMap(map);
+  //printMap(map);
   for (const m of movements) {
-    printMap(map);
-    console.log(m);
+    //printMap(map);
+    //console.log(m);
     const newPos = getNewPositionsLargeMap(map, robotPos, m);
     if (newPos !== false) {
       map = applyNewPositionsLargeMap(map, newPos);
-      console.log(newPos);
+      //console.log(newPos);
       robotPos = findRobotPos(map);
-      if (!checkMap(map)) {
-        printMap(map, false);
-        throw new Error("map broken");
-      }
+      //if (!checkMap(map)) {
+      //  printMap(map, false);
+      //  throw new Error("map broken");
+      //}
     }
-    await delay(1);
+    //await delay(0);
   }
 
-  //const boxesScore = getBoxsesPosition(map).map(calculateBoxScore);
-  //
-  //return boxesScore.reduce((acc, v) => acc + v, 0);
-  return 0;
+  const boxesScore = getBoxsesPositionLarge(map).map(calculateBoxScore);
+
+  return boxesScore.reduce((acc, v) => acc + v, 0);
 }
 
 export function solve() {
@@ -361,6 +359,6 @@ Deno.test(function part1Test() {
   assertEquals(part1(testFile), 10092);
 });
 
-Deno.test(async function part2Test() {
-  assertEquals(await part2(testFile), 9021);
+Deno.test(function part2Test() {
+  assertEquals(part2(testFile), 9021);
 });
