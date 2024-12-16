@@ -31,11 +31,57 @@ function key({ x, y }: { x: number; y: number }) {
   return `${x},${y}`;
 }
 
+function computePathScore(path: string[]) {
+  let score = 0;
+  let prev = path[0].split(",");
+  const dir = { x: 1, y: 0 };
+  for (const p of path.slice(1)) {
+    const curr = p.split(",");
+    const [px, py] = [parseInt(prev[0]), parseInt(prev[1])];
+    const [cx, cy] = [parseInt(curr[0]), parseInt(curr[1])];
+    const newD = {
+      x: cx - px,
+      y: cy - py,
+    };
+    if (newD.x > 0 && dir.x > 0 || newD.x < 0 && dir.x < 0) {
+      score += 1;
+    } else if ((newD.x > 0 && dir.x < 0) || (newD.x < 0 && dir.x > 0)) {
+      score += 2001;
+    } else if (newD.y > 0 && dir.y > 0 || newD.y < 0 && dir.y < 0) {
+      score += 1;
+    } else if ((newD.y > 0 && dir.y < 0) || (newD.y < 0 && dir.y > 0)) {
+      score += 2001;
+    } else {
+      score += 1001;
+    }
+    dir.x = newD.x;
+    dir.y = newD.y;
+    prev = curr;
+  }
+  return score;
+}
+
+function filterBestPath(paths: string[][]) {
+  const bestPaths: string[][] = [];
+
+  const checked: string[] = [];
+  for (const p of paths) {
+    const last = p[p.length - 1];
+    if (checked.includes(last)) continue;
+    checked.push(last);
+    const sameEnds = paths.filter((_p) => _p[_p.length - 1] === last);
+    sameEnds.sort((a, b) => computePathScore(a) - computePathScore(b));
+    bestPaths.push(sameEnds[0]);
+  }
+  //console.log("bestPaths", bestPaths.length, checked);
+  return bestPaths;
+}
+
 function computePaths(
   tree: MazeTree,
   start: { x: number; y: number },
 ): string[][] {
-  const finished: string[][] = [];
+  let finished: string[][] = [];
   let paths: string[][] = [[key(start)]];
 
   while (paths.length > 0) {
@@ -54,7 +100,8 @@ function computePaths(
         }
       }
     }
-    paths = newPaths;
+    paths = filterBestPath(newPaths);
+    finished = filterBestPath(finished);
 
     console.log("number of paths to check", paths.length);
     console.log("finished", finished.length);
@@ -77,7 +124,22 @@ function removeDeadEnd(tree: MazeTree) {
   return removeDeadEnd(tree);
 }
 
+function printMap(
+  _map: string[][],
+  found: { x: number; y: number; v: string }[],
+) {
+  const map: string[][] = JSON.parse(JSON.stringify(_map));
+  for (const { x, y, v } of found) {
+    map[y][x] = v === "S" || v === "E" ? v : " ";
+  }
+  console.log("\n");
+  console.log(map.map((r) => r.join("")).join("\n"));
+}
+
 function part1(data: string) {
+  const map = data.trim().split("\n").filter(Boolean)
+    .map((r) => r.trim().split("").filter(Boolean));
+
   const mazePaths = data.trim().split("\n").filter(Boolean)
     .flatMap((r, y) =>
       r.trim().split("")
@@ -98,12 +160,14 @@ function part1(data: string) {
     mazeTree[key(p)].childs = closest(p).map(key).filter((v) => v in mazeTree);
   }
 
-  removeDeadEnd(mazeTree);
+  //removeDeadEnd(mazeTree);
+  //
+  //printMap(map, Object.values(mazeTree));
 
   const ps = computePaths(mazeTree, start);
 
   console.log(ps);
-  return 0;
+  return computePathScore(ps[0]);
 }
 
 function part2(_data: string) {
