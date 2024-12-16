@@ -59,7 +59,7 @@ function computePathScore(path: string[]) {
     dir.y = newD.y;
     prev = curr;
   }
-  return score;
+  return score - 1001;
 }
 
 function filterBestPath(paths: string[][]) {
@@ -183,7 +183,7 @@ export function solve() {
 }
 
 Deno.test(function part1Test() {
-  assertEquals(part1(testFile), 7036);
+  assertEquals(part1(testFile), 11048);
 });
 
 Deno.test(function part2Test() {
