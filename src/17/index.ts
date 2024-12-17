@@ -153,7 +153,7 @@ function runProgram(registers: REGISTERS, instructions: OPTCODES[]) {
       cursor += 2;
     }
 
-    //if (!instructions.join(",").includes(out.join(","))) return out;
+    if (!instructions.join(",").includes(out.join(","))) return out;
   }
   return out;
 }
@@ -186,47 +186,39 @@ function part2(data: string) {
   let A = BigInt(-1);
   //do {
   //  A += BigInt(14);
-  //for (let i = 18_639_548; i < 18_639_560; i++) {
-  //    //console.log("A", A);
-  const numberStr = (BigInt(8) ** BigInt(instructions.length - 1)).toString()
-    .split("").map((v) => parseInt(v));
-  numberStr[0] += 0;
-  //numberStr[numberStr.length - 2] = 0;
-  const number = BigInt(
-    numberStr.join(""),
-  );
-  const o = runProgram(
-    {
-      ...registers,
-      A: number,
-    },
-    instructions,
-  );
-  out = o.join(",");
-  //console.clear();
-  console.log(
-    "bxl length",
-    number,
-    //BigInt(8) ** BigInt(instructions.length - 1) + BigInt(i),
-    "\n",
-    //"bxl i",
-    //i,
-    //"\n",
-    "bxl          end",
-    out,
-    "\n",
-    "bxl instructions",
-    instructions.join(","),
-  );
-  //if (out === instructions.join(",")) {
-  //A = (BigInt(8) ** BigInt(instructions.length - 1)) + BigInt(i);
-  //break;
-  //}
-  //    if (o.length > 7) {
-  //      console.log("out", out);
-  //      console.log("A", A, i);
-  //    }
-  //}
+  for (let i = 136_554_847; i < 1_000_000_000; i++) {
+    //    //console.log("A", A);
+    const o = runProgram(
+      {
+        ...registers,
+        A: (BigInt(8) ** BigInt(instructions.length - 1)) + BigInt(i),
+      },
+      instructions,
+    );
+    out = o.join(",");
+    console.clear();
+    console.log(
+      "bxl length",
+      BigInt(8) ** BigInt(instructions.length - 1),
+      "\n",
+      "bxl i",
+      i,
+      "\n",
+      "bxl          end",
+      out,
+      "\n",
+      "bxl instructions",
+      instructions.join(","),
+    );
+    if (out === instructions.join(",")) {
+      A = (BigInt(8) ** BigInt(instructions.length - 1)) + BigInt(i);
+      break;
+    }
+    //    if (o.length > 7) {
+    //      console.log("out", out);
+    //      console.log("A", A, i);
+    //    }
+  }
   //} while (out !== instructions.join(","));
 
   return A;
