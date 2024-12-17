@@ -171,18 +171,47 @@ function part1(data: string) {
     mazeTree[key(p)].childs = closest(p).map(key).filter((v) => v in mazeTree);
   }
 
-  //removeDeadEnd(mazeTree);
-  //
-  //printMap(map, Object.values(mazeTree));
+  const ps = computePaths(mazeTree, start);
 
-  const ps = computePaths(mazeTree, start, map);
-
-  //console.log(ps);
   return computePathScore(ps[0]);
 }
 
-function part2(_data: string) {
-  return "todo";
+function computeAlternativePath(tree: MazeTree, bestPath: string[]) {
+  // todo
+
+  return [bestPath];
+}
+
+function part2(data: string) {
+  const map = data.trim().split("\n").filter(Boolean)
+    .map((r) => r.trim().split("").filter(Boolean));
+
+  const mazePaths = data.trim().split("\n").filter(Boolean)
+    .flatMap((r, y) =>
+      r.trim().split("")
+        .map((v, x) =>
+          v === "." || v === "E" || v === "S" ? { x, y, v } : undefined
+        )
+        .filter(Boolean)
+    ) as { x: number; y: number; v: "." | "S" | "E" }[];
+
+  const start = mazePaths.find((p) => p.v === "S");
+  if (!start) throw new Error("start not found");
+  const mazeTree: MazeTree = mazePaths.reduce(
+    (acc, v) => ({ ...acc, [key(v)]: v }),
+    {} as MazeTree,
+  );
+
+  for (const p of Object.values(mazeTree)) {
+    mazeTree[key(p)].childs = closest(p).map(key).filter((v) => v in mazeTree);
+  }
+
+  const ps = computePaths(mazeTree, start);
+
+  const alternatives = computeAlternativePath(mazeTree, ps[0]);
+
+  const tiles = new Set(alternatives.flatMap((p) => p.map((v) => v)));
+  return tiles.size;
 }
 
 export function solve() {
@@ -197,5 +226,5 @@ Deno.test(function part1Test() {
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), "todo");
+  assertEquals(part2(testFile), 45);
 });
