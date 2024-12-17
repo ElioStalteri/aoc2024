@@ -16,3 +16,4 @@ export { solve as day14 } from "./14/index.ts";
 export { solve as day15 } from "./15/index.ts";
 export { solve as day16 } from "./16/index.ts";
 export { solve as day17 } from "./17/index.ts";
+export { solve as day18 } from "./18/index.ts";
