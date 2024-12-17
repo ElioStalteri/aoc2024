@@ -79,6 +79,25 @@ function filterBestPath(paths: string[][]) {
   return bestPaths;
 }
 
+function filterAllBestPaths(paths: string[][]) {
+  let bestPaths: string[][] = [];
+
+  const checked: string[] = [];
+  for (const p of paths) {
+    const last = p[p.length - 1];
+    if (checked.includes(last)) continue;
+    checked.push(last);
+    const sameEnds = paths.filter((_p) => _p[_p.length - 1] === last);
+    sameEnds.sort((a, b) => computePathScore(a) - computePathScore(b));
+    const bestPathScore = computePathScore(sameEnds[0]);
+    bestPaths = bestPaths.concat(
+      sameEnds.filter((p) => computePathScore(p) === bestPathScore),
+    );
+  }
+  //console.log("bestPaths", bestPaths.length, checked);
+  return bestPaths;
+}
+
 function computePaths(
   tree: MazeTree,
   start: { x: number; y: number },
@@ -142,7 +161,7 @@ function printMapString(
       map[parseInt(y)][parseInt(x)] = "\u001b[31m$\u001b[0m";
     }
   }
-  console.clear();
+  //console.clear();
   console.log("\n");
   console.log(map.map((r) => r.join("")).join("\n"));
 }
@@ -176,10 +195,64 @@ function part1(data: string) {
   return computePathScore(ps[0]);
 }
 
-function computeAlternativePath(tree: MazeTree, bestPath: string[]) {
-  // todo
+function computeAlternativePath(
+  tree: MazeTree,
+  bestPath: string[],
+  map?: string[][],
+) {
+  const bestPathBranches = bestPath.map((k, idx) =>
+    k !== "E" &&
+    { idx, branches: tree[k]?.childs?.filter((c) => !bestPath.includes(c)) }
+  ).filter((v) => v && v.branches && v.branches?.length > 0) as {
+    idx: number;
+    branches: string[];
+  }[];
 
-  return [bestPath];
+  console.log("bestPathBranche", bestPathBranches.length);
+
+  const bestPathScore = computePathScore(bestPath);
+
+  let paths = bestPathBranches.flatMap(({ idx, branches }) =>
+    branches.map((p) => [...bestPath.slice(0, idx + 1), p])
+  );
+
+  let founds: string[][] = [];
+
+  while (paths.length > 0) {
+    let newPaths: string[][] = [];
+    for (const p of paths) {
+      const last = tree[p[p.length - 1]];
+      //if (p.includes("6,13")) {
+      //  console.log("the correct", last, bestPath.includes(p[p.length - 1]));
+      //}
+      if (bestPath.includes(p[p.length - 1])) {
+        const idx = bestPath.findIndex((v) => v === p[p.length - 1]);
+        founds.push([...p, ...bestPath.slice(idx + 1)]);
+      } else if (last.v === "E") {
+        founds.push([...p, "E"]);
+        continue;
+      }
+      const childs = last?.childs?.filter((c) => !p.includes(c)) || [];
+      const followings = childs.map((c) => [...p, c]);
+
+      //if (map && p.includes("6,13")) {
+      //  printMapString(map, followings.flat());
+      //}
+      newPaths = newPaths.concat(followings);
+    }
+    paths = filterBestPath(
+      newPaths.filter((p) => computePathScore(p) < bestPathScore),
+    );
+    founds = filterAllBestPaths(founds);
+    //paths = filterBestPath(paths);
+    console.log("number of paths", paths.length);
+    console.log("number of founds", founds.length);
+  }
+
+  //if (map) printMapString(map, paths.flat());
+  //if (map) printMapString(map, [...founds, bestPath].flat());
+
+  return filterAllBestPaths([...founds, bestPath]);
 }
 
 function part2(data: string) {
@@ -208,9 +281,10 @@ function part2(data: string) {
 
   const ps = computePaths(mazeTree, start);
 
-  const alternatives = computeAlternativePath(mazeTree, ps[0]);
+  console.log("getting alternatives");
+  const alternatives = computeAlternativePath(mazeTree, ps[0], map);
 
-  const tiles = new Set(alternatives.flatMap((p) => p.map((v) => v)));
+  const tiles = new Set(alternatives.flat().filter((v) => v !== "E"));
   return tiles.size;
 }
 
@@ -222,9 +296,9 @@ export function solve() {
 }
 
 Deno.test(function part1Test() {
-  assertEquals(part1(testFile), 7036);
+  assertEquals(part1(testFile), 11048);
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), 45);
+  assertEquals(part2(testFile), 64);
 });
