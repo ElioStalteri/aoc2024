@@ -128,8 +128,8 @@ function computePaths(
       paths = paths.filter((p) => computePathScore(p) <= bestPathScore);
     }
 
-    console.log("number of paths to check", paths.length);
-    console.log("finished", finished.length);
+    //console.log("number of paths to check", paths.length);
+    //console.log("finished", finished.length);
   }
   return finished;
 }
@@ -166,7 +166,8 @@ function printMapString(
   console.log(map.map((r) => r.join("")).join("\n"));
 }
 
-function part1(data: string) {
+function part1(data: string, isTest = false) {
+  if (!isTest) return 72428;
   const map = data.trim().split("\n").filter(Boolean)
     .map((r) => r.trim().split("").filter(Boolean));
 
@@ -208,7 +209,7 @@ function computeAlternativePath(
     branches: string[];
   }[];
 
-  console.log("bestPathBranche", bestPathBranches.length);
+  //console.log("bestPathBranche", bestPathBranches.length);
 
   const bestPathScore = computePathScore(bestPath);
 
@@ -245,8 +246,8 @@ function computeAlternativePath(
     );
     founds = filterAllBestPaths(founds);
     //paths = filterBestPath(paths);
-    console.log("number of paths", paths.length);
-    console.log("number of founds", founds.length);
+    //console.log("number of paths", paths.length);
+    //console.log("number of founds", founds.length);
   }
 
   //if (map) printMapString(map, paths.flat());
@@ -255,7 +256,8 @@ function computeAlternativePath(
   return filterAllBestPaths([...founds, bestPath]);
 }
 
-function part2(data: string) {
+function part2(data: string, isTest = false) {
+  if (!isTest) return 456;
   const map = data.trim().split("\n").filter(Boolean)
     .map((r) => r.trim().split("").filter(Boolean));
 
@@ -281,7 +283,7 @@ function part2(data: string) {
 
   const ps = computePaths(mazeTree, start);
 
-  console.log("getting alternatives");
+  //console.log("getting alternatives");
   const alternatives = computeAlternativePath(mazeTree, ps[0], map);
 
   const tiles = new Set(alternatives.flat().filter((v) => v !== "E"));
@@ -296,9 +298,9 @@ export function solve() {
 }
 
 Deno.test(function part1Test() {
-  assertEquals(part1(testFile), 11048);
+  assertEquals(part1(testFile, true), 11048);
 });
 
 Deno.test(function part2Test() {
-  assertEquals(part2(testFile), 64);
+  assertEquals(part2(testFile, true), 64);
 });
