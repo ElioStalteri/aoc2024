@@ -37,6 +37,7 @@ function computePathScore(path: string[]) {
   let prev = prevs.split(",");
   const dir = { x: 1, y: 0 };
   for (const p of rest) {
+    if (p === "E") break;
     const curr = p.split(",");
     const [px, py] = [parseInt(prev[0]), parseInt(prev[1])];
     const [cx, cy] = [parseInt(curr[0]), parseInt(curr[1])];
@@ -59,7 +60,7 @@ function computePathScore(path: string[]) {
     dir.y = newD.y;
     prev = curr;
   }
-  return score - 1001;
+  return score;
 }
 
 function filterBestPath(paths: string[][]) {
@@ -103,6 +104,10 @@ function computePaths(
     }
     paths = filterBestPath(newPaths);
     finished = filterBestPath(finished);
+    if (finished.length > 0) {
+      const bestPathScore = computePathScore(finished[0]);
+      paths = paths.filter((p) => computePathScore(p) <= bestPathScore);
+    }
 
     console.log("number of paths to check", paths.length);
     console.log("finished", finished.length);
@@ -110,29 +115,34 @@ function computePaths(
   return finished;
 }
 
-function removeDeadEnd(tree: MazeTree) {
-  const dead = Object.values(tree).filter(({ childs, v }) =>
-    v !== "S" && v !== "E" && childs && childs.length < 2
-  );
-  if (dead.length === 0) return tree;
-  for (const d of dead) {
-    delete tree[key(d)];
-    const childs = d?.childs || [];
-    for (const c of childs) {
-      tree[c].childs = tree[c]?.childs?.filter((v) => v !== key(d)) || [];
-    }
-  }
-  return removeDeadEnd(tree);
-}
-
 function printMap(
   _map: string[][],
   found: { x: number; y: number; v: string }[],
 ) {
   const map: string[][] = JSON.parse(JSON.stringify(_map));
-  for (const { x, y, v } of found) {
-    map[y][x] = v === "S" || v === "E" ? v : " ";
+  if (found.length > 0) {
+    for (const { x, y, v } of found) {
+      map[y][x] = v === "S" || v === "E" ? v : "\u001b[31m$\u001b[0m";
+    }
   }
+  console.clear();
+  console.log("\n");
+  console.log(map.map((r) => r.join("")).join("\n"));
+}
+
+function printMapString(
+  _map: string[][],
+  found: string[],
+) {
+  const map: string[][] = JSON.parse(JSON.stringify(_map));
+  if (found.length > 0) {
+    for (const str of found) {
+      if (str === "S" || str === "E") continue;
+      const [x, y] = str.split(",");
+      map[parseInt(y)][parseInt(x)] = "\u001b[31m$\u001b[0m";
+    }
+  }
+  console.clear();
   console.log("\n");
   console.log(map.map((r) => r.join("")).join("\n"));
 }
@@ -165,9 +175,9 @@ function part1(data: string) {
   //
   //printMap(map, Object.values(mazeTree));
 
-  const ps = computePaths(mazeTree, start);
+  const ps = computePaths(mazeTree, start, map);
 
-  console.log(ps);
+  //console.log(ps);
   return computePathScore(ps[0]);
 }
 
@@ -183,7 +193,7 @@ export function solve() {
 }
 
 Deno.test(function part1Test() {
-  assertEquals(part1(testFile), 11048);
+  assertEquals(part1(testFile), 7036);
 });
 
 Deno.test(function part2Test() {
